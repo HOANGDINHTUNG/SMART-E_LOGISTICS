@@ -152,7 +152,23 @@ export default function Orders() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-xs text-muted-foreground hidden md:table-cell">
-                      {order.origin} → {order.destination}
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:underline"
+                      >
+                        {order.origin}
+                      </a>{" "}
+                      →{" "}
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:underline"
+                      >
+                        {order.destination}
+                      </a>
                     </td>
                     <td className="py-3 px-4 hidden lg:table-cell">
                       <span className="text-xs text-muted-foreground">

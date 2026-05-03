@@ -302,7 +302,23 @@ export default function Dashboard() {
                     {order.cargo_type}
                   </td>
                   <td className="py-2.5 px-3 text-xs text-muted-foreground hidden md:table-cell">
-                    {order.origin} {"->"} {order.destination}
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline"
+                    >
+                      {order.origin}
+                    </a>{" "}
+                    {"->"}{" "}
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline"
+                    >
+                      {order.destination}
+                    </a>
                   </td>
                   <td className="py-2.5 px-3">
                     <StatusBadge status={order.status} />

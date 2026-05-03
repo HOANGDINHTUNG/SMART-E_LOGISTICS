@@ -155,7 +155,24 @@ export default function OrderDetail() {
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            {order.cargo_type} · {order.origin} {"->"} {order.destination}
+            {order.cargo_type} ·{" "}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline text-primary"
+            >
+              {order.origin}
+            </a>{" "}
+            {"->"}{" "}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline text-primary"
+            >
+              {order.destination}
+            </a>
           </p>
         </div>
       </div>
@@ -171,7 +188,27 @@ export default function OrderDetail() {
             <InfoRow label="Người nhận" value={order.receiver_name} />
             <InfoRow
               label="Tuyến"
-              value={`${order.origin} -> ${order.destination}`}
+              value={
+                <>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:underline text-primary"
+                  >
+                    {order.origin}
+                  </a>{" "}
+                  {"->"}{" "}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:underline text-primary"
+                  >
+                    {order.destination}
+                  </a>
+                </>
+              }
             />
             <InfoRow label="Loại hàng" value={order.cargo_type} />
             {order.estimated_delivery && (

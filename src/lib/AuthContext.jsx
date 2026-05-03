@@ -24,22 +24,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkUserAuth = async () => {
-    setUser({ id: "mock-1", text: "Admin" });
-    setIsAuthenticated(true);
+    const isMockLogged = localStorage.getItem("mockAdminLogin") === "true";
+    if (isMockLogged) {
+      setUser({ id: "mock-1", text: "Admin" });
+      setIsAuthenticated(true);
+    } else {
+      setUser(null);
+      setIsAuthenticated(false);
+    }
     setIsLoadingAuth(false);
     setAuthChecked(true);
+  };
+
+  const login = () => {
+    localStorage.setItem("mockAdminLogin", "true");
+    setUser({ id: "mock-1", text: "Admin" });
+    setIsAuthenticated(true);
   };
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem("mockAdminLogin");
 
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+      window.location.href = "/home";
     }
   };
 
@@ -58,6 +67,7 @@ export const AuthProvider = ({ children }) => {
         authError,
         appPublicSettings,
         authChecked,
+        login,
         logout,
         navigateToLogin,
         checkUserAuth,

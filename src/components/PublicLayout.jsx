@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Box, Menu, X, LayoutDashboard } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { Box, Menu, X, LayoutDashboard } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { path: '/home', label: 'Home' },
-  { path: '/features', label: 'Tính năng' },
-  { path: '/demo', label: 'Demo' },
-  { path: '/contact', label: 'Liên hệ' },
+  { path: "/home", label: "Home" },
+  { path: "/features", label: "Tính năng" },
+  { path: "/demo", label: "Demo" },
+  { path: "/contact", label: "Liên hệ" },
 ];
 
 export default function PublicLayout() {
@@ -25,14 +25,19 @@ export default function PublicLayout() {
               <Box className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <span className="text-sm font-bold text-foreground">SmartBox</span>
-              <span className="text-sm text-primary font-medium"> E-Logistics</span>
+              <span className="text-sm font-bold text-foreground">
+                SmartBox
+              </span>
+              <span className="text-sm text-primary font-medium">
+                {" "}
+                E-Logistics
+              </span>
             </div>
           </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map(link => (
+            {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -40,7 +45,7 @@ export default function PublicLayout() {
                   "px-4 py-2 rounded-lg text-sm font-medium transition-all",
                   location.pathname === link.path
                     ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary",
                 )}
               >
                 {link.label}
@@ -51,7 +56,7 @@ export default function PublicLayout() {
           {/* CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              to="/"
+              to="/dashboard"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all"
             >
               <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
@@ -59,29 +64,41 @@ export default function PublicLayout() {
           </div>
 
           {/* Mobile toggle */}
-          <button className="md:hidden text-muted-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <button
+            className="md:hidden text-muted-foreground"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
 
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden border-t border-border bg-card px-4 py-3 space-y-1">
-            {navLinks.map(link => (
+            {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   "block px-3 py-2 rounded-lg text-sm font-medium",
-                  location.pathname === link.path ? "text-primary bg-primary/10" : "text-muted-foreground"
+                  location.pathname === link.path
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground",
                 )}
               >
                 {link.label}
               </Link>
             ))}
-            <Link to="/" onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-primary">
+            <Link
+              to="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-primary"
+            >
               Dashboard Admin
             </Link>
           </div>
@@ -99,12 +116,20 @@ export default function PublicLayout() {
             <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
               <Box className="w-3 h-3 text-primary-foreground" />
             </div>
-            <span className="text-sm text-muted-foreground">SmartBox E-Logistics © 2026</span>
+            <span className="text-sm text-muted-foreground">
+              SmartBox E-Logistics © 2026
+            </span>
           </div>
           <div className="flex gap-6 text-xs text-muted-foreground">
-            <Link to="/features" className="hover:text-foreground">Tính năng</Link>
-            <Link to="/demo" className="hover:text-foreground">Demo</Link>
-            <Link to="/contact" className="hover:text-foreground">Liên hệ</Link>
+            <Link to="/features" className="hover:text-foreground">
+              Tính năng
+            </Link>
+            <Link to="/demo" className="hover:text-foreground">
+              Demo
+            </Link>
+            <Link to="/contact" className="hover:text-foreground">
+              Liên hệ
+            </Link>
           </div>
         </div>
       </footer>
