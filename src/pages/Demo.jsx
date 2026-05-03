@@ -22,10 +22,12 @@ import {
   CheckCircle2,
   ArrowRight,
   Thermometer,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import QRScanner from "../components/QRScanner";
 
 // Fix leaflet icon
 // @ts-ignore
@@ -53,6 +55,7 @@ export default function Demo() {
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [allOrders, setAllOrders] = useState([]);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     base44.entities.Order.list("-created_date", 20).then(setAllOrders);
@@ -118,16 +121,18 @@ export default function Demo() {
           Theo dõi đơn hàng trực tiếp
         </h1>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          Nhập mã đơn hàng để xem vị trí GPS, dữ liệu cảm biến và cảnh báo theo
-          thời gian thực.
+          Nhập mã đơn hàng bằng tay hoặc tiến hành quét mã QR để tra cứu tức thì
+          trạng thái.
         </p>
       </div>
 
       {/* Search */}
       <div className="max-w-xl mx-auto">
         <div className="bg-card border border-border rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Search className="w-4 h-4 text-primary" /> Nhập mã đơn hàng
+          <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-primary" /> Nhập mã đơn hàng
+            </span>
           </h2>
           <div className="flex gap-3">
             <Input
@@ -148,6 +153,13 @@ export default function Demo() {
                 <Search className="w-4 h-4" />
               )}
               Tra cứu
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowScanner(!showScanner)}
+              className="gap-2 border-primary/20 text-primary hover:bg-primary/10 flex-shrink-0"
+            >
+              <QrCode className="w-4 h-4" /> Quét QR
             </Button>
           </div>
 
@@ -182,17 +194,42 @@ export default function Demo() {
         </div>
       </div>
 
-      {/* QR info */}
-      <div className="max-w-xl mx-auto">
-        <div className="bg-amber-400/5 border border-amber-400/20 rounded-xl p-4 flex gap-3 items-start">
-          <QrCode className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="text-xs text-muted-foreground">
-            <span className="text-amber-400 font-semibold">QR Code: </span>
-            Trong hệ thống thực tế, khách hàng quét mã QR in trên hộp để tra cứu
-            tức thì. Mã QR encode mã đơn hàng và redirect về trang này.
+      {showScanner && (
+        <div className="max-w-md mx-auto fade-in">
+          <div className="bg-card border border-border rounded-2xl p-6 relative">
+            <button
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-10"
+              onClick={() => setShowScanner(false)}
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-sm font-semibold mb-4 text-center">
+              Đưa mã QR vào khung hình Camera
+            </h3>
+            <QRScanner
+              onScanSuccess={(decodedText) => {
+                setShowScanner(false);
+                setSearchCode(decodedText);
+                handleSearch(decodedText);
+              }}
+              onScanFailure={() => {}}
+            />
           </div>
         </div>
-      </div>
+      )}
+
+      {/* QR info */}
+      {!showScanner && (
+        <div className="max-w-xl mx-auto">
+          <div className="bg-amber-400/5 border border-amber-400/20 rounded-xl p-4 flex gap-3 items-start">
+            <QrCode className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-muted-foreground">
+              <span className="text-amber-400 font-semibold">QR Code: </span>
+              Sử dụng nút Quét QR ở trên để thực hiện tra cứu bằng Camera.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Result */}
       {order && (
@@ -215,8 +252,25 @@ export default function Demo() {
                     {order.status}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {order.cargo_type} · {order.origin} → {order.destination}
+                <p className="text-sm text-muted-foreground pt-1">
+                  {order.cargo_type} ·{" "}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:underline text-primary"
+                  >
+                    {order.origin}
+                  </a>{" "}
+                  →{" "}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:underline text-primary"
+                  >
+                    {order.destination}
+                  </a>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Người nhận:{" "}
