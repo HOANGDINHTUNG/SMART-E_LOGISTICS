@@ -1,0 +1,53 @@
+{
+  "name": "SensorData",
+  "type": "object",
+  "properties": {
+    "smartbox_id": {
+      "type": "string",
+      "title": "SmartBox ID"
+    },
+    "order_id": {
+      "type": "string",
+      "title": "Order ID"
+    },
+    "temperature": {
+      "type": "number",
+      "title": "Nhi\u1ec7t \u0111\u1ed9 (\u00b0C)"
+    },
+    "humidity": {
+      "type": "number",
+      "title": "\u0110\u1ed9 \u1ea9m (%)"
+    },
+    "shock_g": {
+      "type": "number",
+      "title": "Va ch\u1ea1m (G)"
+    },
+    "latitude": {
+      "type": "number",
+      "title": "V\u0129 \u0111\u1ed9"
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Kinh \u0111\u1ed9"
+    },
+    "battery": {
+      "type": "number",
+      "title": "Pin (%)"
+    },
+    "is_open": {
+      "type": "boolean",
+      "title": "H\u1ed9p \u0111ang m\u1edf"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Th\u1eddi \u0111i\u1ec3m \u0111o"
+    }
+  },
+  "required": [
+    "smartbox_id",
+    "temperature",
+    "humidity",
+    "timestamp"
+  ]
+}

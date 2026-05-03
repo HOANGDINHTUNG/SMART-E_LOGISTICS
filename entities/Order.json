@@ -1,0 +1,70 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_code": {
+      "type": "string",
+      "title": "M\u00e3 \u0111\u01a1n h\u00e0ng"
+    },
+    "sender_name": {
+      "type": "string",
+      "title": "Ng\u01b0\u1eddi g\u1eedi"
+    },
+    "receiver_name": {
+      "type": "string",
+      "title": "Ng\u01b0\u1eddi nh\u1eadn"
+    },
+    "origin": {
+      "type": "string",
+      "title": "\u0110i\u1ec3m xu\u1ea5t ph\u00e1t"
+    },
+    "destination": {
+      "type": "string",
+      "title": "\u0110i\u1ec3m \u0111\u1ebfn"
+    },
+    "cargo_type": {
+      "type": "string",
+      "title": "Lo\u1ea1i h\u00e0ng h\u00f3a",
+      "enum": [
+        "D\u01b0\u1ee3c ph\u1ea9m",
+        "Th\u1ef1c ph\u1ea9m \u0111\u00f4ng l\u1ea1nh",
+        "H\u00f3a ch\u1ea5t",
+        "\u0110i\u1ec7n t\u1eed",
+        "Th\u00f4ng th\u01b0\u1eddng"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "title": "Tr\u1ea1ng th\u00e1i",
+      "enum": [
+        "Ch\u1edd x\u1eed l\u00fd",
+        "\u0110ang v\u1eadn chuy\u1ec3n",
+        "\u0110\u00e3 giao",
+        "C\u00f3 s\u1ef1 c\u1ed1",
+        "H\u1ee7y"
+      ]
+    },
+    "smartbox_id": {
+      "type": "string",
+      "title": "SmartBox ID"
+    },
+    "estimated_delivery": {
+      "type": "string",
+      "format": "date",
+      "title": "D\u1ef1 ki\u1ebfn giao"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Ghi ch\u00fa"
+    }
+  },
+  "required": [
+    "order_code",
+    "sender_name",
+    "receiver_name",
+    "origin",
+    "destination",
+    "cargo_type",
+    "status"
+  ]
+}

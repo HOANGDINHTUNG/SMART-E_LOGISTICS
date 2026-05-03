@@ -1,0 +1,64 @@
+{
+  "name": "Alert",
+  "type": "object",
+  "properties": {
+    "smartbox_id": {
+      "type": "string",
+      "title": "SmartBox ID"
+    },
+    "order_id": {
+      "type": "string",
+      "title": "Order ID"
+    },
+    "alert_type": {
+      "type": "string",
+      "title": "Lo\u1ea1i c\u1ea3nh b\u00e1o",
+      "enum": [
+        "Nhi\u1ec7t \u0111\u1ed9 v\u01b0\u1ee3t ng\u01b0\u1ee1ng",
+        "\u0110\u1ed9 \u1ea9m b\u1ea5t th\u01b0\u1eddng",
+        "Va ch\u1ea1m m\u1ea1nh",
+        "M\u1ea5t t\u00edn hi\u1ec7u GPS",
+        "Pin y\u1ebfu",
+        "H\u1ed9p b\u1ecb m\u1edf tr\u00e1i ph\u00e9p",
+        "\u0110i sai l\u1ed9 tr\u00ecnh"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "title": "M\u1ee9c \u0111\u1ed9",
+      "enum": [
+        "Th\u1ea5p",
+        "Trung b\u00ecnh",
+        "Cao",
+        "Kh\u1ea9n c\u1ea5p"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "title": "N\u1ed9i dung"
+    },
+    "value": {
+      "type": "number",
+      "title": "Gi\u00e1 tr\u1ecb \u0111o \u0111\u01b0\u1ee3c"
+    },
+    "threshold": {
+      "type": "number",
+      "title": "Ng\u01b0\u1ee1ng cho ph\u00e9p"
+    },
+    "is_resolved": {
+      "type": "boolean",
+      "title": "\u0110\u00e3 x\u1eed l\u00fd"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Th\u1eddi \u0111i\u1ec3m x\u1eed l\u00fd"
+    }
+  },
+  "required": [
+    "smartbox_id",
+    "alert_type",
+    "severity",
+    "message"
+  ]
+}

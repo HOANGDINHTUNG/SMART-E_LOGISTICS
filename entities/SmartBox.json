@@ -1,0 +1,66 @@
+{
+  "name": "SmartBox",
+  "type": "object",
+  "properties": {
+    "box_id": {
+      "type": "string",
+      "title": "Box ID"
+    },
+    "box_name": {
+      "type": "string",
+      "title": "T\u00ean SmartBox"
+    },
+    "status": {
+      "type": "string",
+      "title": "Tr\u1ea1ng th\u00e1i",
+      "enum": [
+        "S\u1eb5n s\u00e0ng",
+        "\u0110ang v\u1eadn chuy\u1ec3n",
+        "B\u1ea3o tr\u00ec",
+        "Ngo\u1ea1i tuy\u1ebfn"
+      ]
+    },
+    "current_order_id": {
+      "type": "string",
+      "title": "\u0110\u01a1n h\u00e0ng hi\u1ec7n t\u1ea1i"
+    },
+    "last_latitude": {
+      "type": "number",
+      "title": "V\u0129 \u0111\u1ed9 hi\u1ec7n t\u1ea1i"
+    },
+    "last_longitude": {
+      "type": "number",
+      "title": "Kinh \u0111\u1ed9 hi\u1ec7n t\u1ea1i"
+    },
+    "last_temperature": {
+      "type": "number",
+      "title": "Nhi\u1ec7t \u0111\u1ed9 (\u00b0C)"
+    },
+    "last_humidity": {
+      "type": "number",
+      "title": "\u0110\u1ed9 \u1ea9m (%)"
+    },
+    "last_shock": {
+      "type": "number",
+      "title": "Gia t\u1ed1c va ch\u1ea1m (G)"
+    },
+    "battery_level": {
+      "type": "number",
+      "title": "Pin (%)"
+    },
+    "firmware_version": {
+      "type": "string",
+      "title": "Phi\u00ean b\u1ea3n firmware"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "title": "L\u1ea7n cu\u1ed1i online"
+    }
+  },
+  "required": [
+    "box_id",
+    "box_name",
+    "status"
+  ]
+}
