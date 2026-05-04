@@ -2,8 +2,10 @@
 // Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_LIMIT = 5;
+const TOAST_REMOVE_DELAY = 3000; // 3 seconds auto-dismiss
+const TOAST_STAGGER_MS = 100; // 100ms spacing between toasts (visual stagger)
+const TOAST_GAP_PX = 10; // 10px gap between toasts in UI
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -20,6 +22,11 @@ function genId() {
 }
 
 const toastTimeouts = new Map();
+
+// pending add timers to stagger toast appearance
+const pendingAddTimers = new Map();
+const pendingProps = new Map();
+let lastDispatchTime = 0;
 
 const addToRemoveQueue = (toastId) => {
   if (toastTimeouts.has(toastId)) {
@@ -114,32 +121,64 @@ function dispatch(action) {
 function toast({ ...props }) {
   const id = genId();
 
-  const update = (props) =>
-    dispatch({
-      type: actionTypes.UPDATE_TOAST,
-      toast: { ...props, id },
-    });
-
-  const dismiss = () =>
-    dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
-
-  dispatch({
-    type: actionTypes.ADD_TOAST,
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss();
-      },
-    },
-  });
-
-  return {
-    id,
-    dismiss,
-    update,
+  const update = (newProps) => {
+    // if pending, merge into pendingProps
+    if (pendingProps.has(id)) {
+      pendingProps.set(id, { ...pendingProps.get(id), ...newProps });
+    } else {
+      dispatch({ type: actionTypes.UPDATE_TOAST, toast: { ...newProps, id } });
+    }
   };
+
+  const dismiss = () => {
+    // if pending add, cancel it
+    const t = pendingAddTimers.get(id);
+    if (t) {
+      clearTimeout(t);
+      pendingAddTimers.delete(id);
+      pendingProps.delete(id);
+      return;
+    }
+    dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+  };
+
+  // schedule add with staggering
+  try {
+    const now = Date.now();
+    const sinceLast = Math.max(0, now - lastDispatchTime);
+    const delay = pendingAddTimers.size > 0 ? (pendingAddTimers.size * TOAST_STAGGER_MS) : Math.max(0, TOAST_STAGGER_MS - sinceLast);
+    pendingProps.set(id, props);
+    const timer = setTimeout(() => {
+      pendingAddTimers.delete(id);
+      const p = pendingProps.get(id) || {};
+      pendingProps.delete(id);
+      dispatch({
+        type: actionTypes.ADD_TOAST,
+        toast: {
+          ...p,
+          id,
+          open: true,
+          onOpenChange: (open) => {
+            if (!open) dismiss();
+          },
+        },
+      });
+      lastDispatchTime = Date.now();
+      // schedule auto remove
+      addToRemoveQueue(id);
+    }, delay);
+    pendingAddTimers.set(id, timer);
+  } catch {
+    // fallback to immediate
+    dispatch({
+      type: actionTypes.ADD_TOAST,
+      toast: { ...props, id, open: true, onOpenChange: (open) => { if (!open) dismiss(); } },
+    });
+    addToRemoveQueue(id);
+    lastDispatchTime = Date.now();
+  }
+
+  return { id, dismiss, update };
 }
 
 function useToast() {
@@ -163,3 +202,7 @@ function useToast() {
 }
 
 export { useToast, toast }; 
+export function clearToasts() {
+  // remove all toasts
+  dispatch({ type: actionTypes.REMOVE_TOAST, toastId: undefined });
+}

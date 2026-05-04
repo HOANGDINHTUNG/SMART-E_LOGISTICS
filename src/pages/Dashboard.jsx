@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Link } from "react-router-dom";
+import { formatLiveClock, getLiveLog, getLiveState } from "@/lib/liveStorage";
+import { LIVE_SCENARIO } from "@/utils/liveScenario";
+import { Link, useNavigate } from "react-router-dom";
 import StatCard from "../components/StatCard";
 import AlertBadge from "../components/AlertBadge";
 import QRCode from "react-qr-code";
@@ -31,11 +33,27 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [boxes, setBoxes] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [sensorHistory, setSensorHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isQrScanning, setIsQrScanning] = useState(false);
+  const [liveState, setLiveState] = useState(() => getLiveState());
+  const [liveLog, setLiveLog] = useState(() => getLiveLog());
+
+
+  useEffect(() => {
+    const onLiveState = (event) => setLiveState(event.detail || getLiveState());
+    const onLiveLog = (event) => setLiveLog(event.detail || getLiveLog());
+    window.addEventListener("live:state", onLiveState);
+    window.addEventListener("live:log", onLiveLog);
+    return () => {
+      window.removeEventListener("live:state", onLiveState);
+      window.removeEventListener("live:log", onLiveLog);
+    };
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -59,18 +77,92 @@ export default function Dashboard() {
 
   useEffect(() => {
     const unsub = base44.entities.Alert.subscribe((event) => {
-      if (event.type === "create")
-        setAlerts((prev) => [event.data, ...prev].slice(0, 20));
+      if (event.type === "create") {
+        setAlerts((prev) => {
+          const exists = prev.some((a) => a.id === event.data?.id);
+          return exists ? prev : [event.data, ...prev].slice(0, 20);
+        });
+        try {
+          // show toast for real alerts
+          const { message, severity } = event.data || {};
+          const { toast } = require("@/components/ui/use-toast");
+          toast({ title: `Cảnh báo ${severity || ""}`, description: message || "Có cảnh báo" });
+        } catch {}
+      }
+      if (event.type === "update") {
+        setAlerts((prev) => prev.map((a) => (a.id === event.data?.id ? event.data : a)));
+      }
     });
     const unsubBox = base44.entities.SmartBox.subscribe((event) => {
       if (event.type === "update")
         setBoxes((prev) =>
-          prev.map((b) => (b.id === event.id ? event.data : b)),
+          prev.map((b) => (b.id === event.data?.id ? event.data : b)),
         );
     });
+    // demo event listener
+    const onDemo = (e) => {
+      const evt = e?.detail;
+      if (!evt) return;
+      if (evt.type === "alert") {
+        const alertData = evt.data || { id: evt.alertId || evt.alert_id || Date.now(), ...evt };
+        setAlerts((prev) => {
+          const exists = prev.find((a) => a.id === alertData.id);
+          if (exists) return prev.map((a) => (a.id === alertData.id ? { ...a, ...alertData } : a));
+          return [alertData, ...prev].slice(0, 20);
+        });
+      }
+      if (evt.type === "sensor") {
+        setSensorHistory((prev) => {
+          const entry = { time: prev.length + 1, temp: evt.value, humidity: evt.humidity || 0 };
+          return [...prev.slice(-23), entry];
+        });
+      }
+      if (evt.type === "order") {
+        setOrders((prev) => {
+          const base = evt.data || {};
+          const id = evt.orderId || evt.order_id || base.id || evt.id;
+          const mappedStatus =
+            base.status ||
+            (evt.status === "created"
+              ? "Chờ xử lý"
+              : evt.status === "picked"
+              ? "Đang vận chuyển"
+              : evt.status === "shipped"
+              ? "Đang vận chuyển"
+              : evt.status === "delivered"
+              ? "Đã giao"
+              : evt.status || "Chờ xử lý");
+          const exists = prev.find((o) => o.id === id || o.order_code === base.order_code || o.order_code === `DM-${id}`);
+          const newOrder = {
+            id,
+            order_code: base.order_code || `DM-${id}`,
+            sender_name: base.sender_name || "Demo Sender",
+            receiver_name: base.receiver_name || "Demo Receiver",
+            origin: base.origin || "Demo",
+            destination: base.destination || "Demo",
+            cargo_type: base.cargo_type || "Demo",
+            smartbox_id: base.smartbox_id || null,
+            estimated_delivery: base.estimated_delivery || null,
+            notes: base.notes || null,
+            status: mappedStatus,
+          };
+          if (exists) return prev.map((o) => (o.id === exists.id ? { ...o, ...newOrder } : o));
+          return [newOrder, ...prev].slice(0, 100);
+        });
+      }
+      if (evt.type === "smartbox" && evt.data) {
+        setBoxes((prev) => {
+          const exists = prev.find((b) => b.id === evt.data.id || b.box_id === evt.data.box_id);
+          if (exists) return prev.map((b) => (b.id === exists.id ? { ...b, ...evt.data } : b));
+          return [evt.data, ...prev].slice(0, 50);
+        });
+      }
+    };
+    window.addEventListener("demo:event", onDemo);
     return () => {
       unsub();
       unsubBox();
+      window.removeEventListener("demo:event", onDemo);
     };
   }, []);
 
@@ -85,6 +177,18 @@ export default function Dashboard() {
     (a) =>
       !a.is_resolved && (a.severity === "Cao" || a.severity === "Khẩn cấp"),
   );
+
+  const liveGenerated = liveState.generatedEntityIds || {};
+  const liveProgress = Math.min(
+    100,
+    Math.round(((liveState.currentSecond || 0) / (liveState.totalDuration || LIVE_SCENARIO.totalDuration)) * 100),
+  );
+  const liveStatusLabel = {
+    not_started: "Chưa chạy",
+    running: "Đang chạy",
+    paused: "Tạm dừng",
+    completed: "Hoàn tất",
+  }[liveState.status] || "Chưa chạy";
 
   // Data for Pie Chart
   const statusCounts = orders.reduce((acc, order) => {
@@ -117,8 +221,18 @@ export default function Dashboard() {
       </div>
     );
 
-  // Generate a URL for the QR code, for demo purpose it links to the demo tracker page
-  const demoUrl = `${window.location.origin}/demo`;
+  const qrOrder = orders.find((order) => order.order_code === "ORD-LIVE-001") || orders[0];
+  const qrOrderUrl = qrOrder
+    ? `${window.location.origin}/orders/${qrOrder.id}`
+    : `${window.location.origin}/orders`;
+
+  const handleQrScan = () => {
+    if (!qrOrder || isQrScanning) return;
+    setIsQrScanning(true);
+    window.setTimeout(() => {
+      navigate(`/orders/${qrOrder.id}`);
+    }, 1200);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
@@ -170,6 +284,63 @@ export default function Dashboard() {
           subtitle="Giao thành công"
           trend={8}
         />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-card/40 backdrop-blur-md border border-primary/20 rounded-2xl p-6 shadow-sm overflow-hidden relative">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" /> Live Session
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                {LIVE_SCENARIO.name} · dữ liệu được ghi trực tiếp vào Order, SmartBox, Alert và SensorData.
+              </p>
+            </div>
+            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold ${
+              liveState.status === "running"
+                ? "text-primary bg-primary/10 border-primary/20"
+                : liveState.status === "completed"
+                  ? "text-green-400 bg-green-400/10 border-green-400/20"
+                  : liveState.status === "paused"
+                    ? "text-amber-300 bg-amber-400/10 border-amber-400/20"
+                    : "text-muted-foreground bg-secondary border-border"
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${liveState.status === "running" ? "bg-primary animate-pulse" : "bg-current"}`} />
+              {liveStatusLabel}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+            <LiveMetric label="Tiến trình" value={`${formatLiveClock(liveState.currentSecond || 0)} / ${formatLiveClock(liveState.totalDuration || LIVE_SCENARIO.totalDuration)}`} />
+            <LiveMetric label="Orders" value={liveGenerated.orders?.length || 0} />
+            <LiveMetric label="SmartBoxes" value={liveGenerated.smartboxes?.length || 0} />
+            <LiveMetric label="Sensors" value={liveGenerated.sensorData?.length || 0} />
+            <LiveMetric label="Alerts" value={liveGenerated.alerts?.length || 0} />
+          </div>
+
+          <div className="h-2 rounded-full bg-secondary overflow-hidden border border-border/60">
+            <div className="h-full bg-primary transition-all duration-500" style={{ width: `${liveProgress}%` }} />
+          </div>
+        </div>
+
+        <div className="bg-card/40 backdrop-blur-md border border-border/60 rounded-2xl p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+            <Activity className="w-4 h-4 text-primary" /> Live Activity Feed
+          </h2>
+          <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+            {liveLog.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Chưa có event Live. Bấm Start Live để bắt đầu.</p>
+            ) : (
+              liveLog.slice(-6).reverse().map((item) => (
+                <div key={item.id} className="flex gap-2 text-xs bg-secondary/30 border border-border/40 rounded-lg px-3 py-2">
+                  <span className="font-mono text-primary shrink-0">[{formatLiveClock(item.second)}]</span>
+                  <span className="text-muted-foreground leading-snug">{item.message}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -445,23 +616,39 @@ export default function Dashboard() {
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none group-hover:bg-primary/30 transition-colors duration-500" />
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
               <QrCodeIcon className="w-5 h-5 text-primary" />
-              Scan Demo Tracking
+              Scan Order Tracking
             </h2>
             <p className="text-xs text-muted-foreground mb-5 pr-8 leading-relaxed">
-              Mã QR thật có thể quét bằng Camera điện thoại để vào trang Demo
-              Tracking trực tiếp.
+              Mã QR liên kết với đơn hàng mới nhất. Trỏ chuột vào mã và bấm
+              Quét vào để mở chi tiết đơn hàng tương ứng.
             </p>
-            <div className="bg-white p-4 rounded-xl inline-block shadow-xl border-4 border-white transform transition-transform hover:scale-105 duration-300">
+            <div
+              className={`qr-scan-box bg-white p-4 rounded-xl inline-block shadow-xl border-4 border-white transition-transform duration-300 group/qr ${
+                isQrScanning ? "is-scanning scale-105" : "hover:scale-105"
+              }`}
+            >
               <QRCode
-                value={demoUrl}
+                value={qrOrderUrl}
                 size={140}
                 level="H"
                 bgColor="#ffffff"
                 fgColor="#020817"
               />
+              <div className="qr-scan-overlay">
+                <button
+                  type="button"
+                  onClick={handleQrScan}
+                  disabled={!qrOrder || isQrScanning}
+                  className="qr-scan-button"
+                >
+                  {isQrScanning ? "Đang quét..." : "Quét vào"}
+                </button>
+              </div>
+              <div className="qr-scan-line" />
             </div>
             <div className="mt-4 flex items-center gap-2 text-xs text-primary/80">
-              <Smartphone className="w-4 h-4" /> Scan with mobile phone
+              <Smartphone className="w-4 h-4" />
+              {qrOrder ? qrOrder.order_code : "Chưa có đơn hàng"}
             </div>
           </div>
 
@@ -512,6 +699,15 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LiveMetric({ label, value }) {
+  return (
+    <div className="bg-secondary/30 border border-border/50 rounded-xl px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm font-semibold text-foreground font-mono mt-1">{value}</div>
     </div>
   );
 }

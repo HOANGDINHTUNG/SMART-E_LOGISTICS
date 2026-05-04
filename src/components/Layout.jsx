@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -10,21 +10,82 @@ import {
   ChevronRight,
   Wifi,
   Menu,
+  Home
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import LiveControlButton from "@/components/LiveControlButton";
+import { toast } from "@/components/ui/use-toast";
 
 const navItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Đơn hàng", icon: Package },
   { path: "/smartboxes", label: "SmartBox", icon: Box },
   { path: "/alerts", label: "Cảnh báo", icon: Bell },
   { path: "/system", label: "Hệ thống", icon: Activity },
+  { path: "/home", label: "Trang chủ", icon: Home }
 ];
 
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // demo notifications: show rich toasts for orders, smartboxes, and alerts
+  useEffect(() => {
+    const timers = [];
+    const onDemoCreate = (e) => {
+      const evt = e?.detail;
+      if (!evt) return;
+      try {
+        // Alert notifications - prominent, longer auto-dismiss window
+        if (evt.type === "alert") {
+          const severity = evt.severity || evt.level || "Cao";
+          const msg = evt.message || "Có cảnh báo từ hệ thống";
+          const h = toast({
+            title: `⚠️ Cảnh báo ${severity}`,
+            description: msg,
+            variant: "alert",
+          });
+          // alerts auto-dismiss after 5 seconds (longer than orders)
+          if (h && typeof h.dismiss === "function") timers.push(setTimeout(() => h.dismiss(), 5000));
+        }
+
+        // Order creation notifications
+        if (evt.type === "order" && (evt.status === "created" || (evt.data && evt.data.status === "Chờ xử lý"))) {
+          const h = toast({
+            title: `📦 Đơn mới ${evt.data?.order_code || evt.orderId}`,
+            description: "Đã tạo đơn hàng",
+            variant: "success",
+          });
+          if (h && typeof h.dismiss === "function") timers.push(setTimeout(() => h.dismiss(), 3000));
+        }
+
+        // SmartBox creation notifications
+        if (evt.type === "smartbox" && (evt.action === "create" || (evt.data && evt.data.box_name))) {
+          const h = toast({
+            title: `📱 SmartBox mới ${evt.data?.box_name || evt.data?.box_id || ''}`,
+            description: "Thiết bị đã được thêm",
+            variant: "success",
+          });
+          if (h && typeof h.dismiss === "function") timers.push(setTimeout(() => h.dismiss(), 3000));
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener("demo:event", onDemoCreate);
+    return () => {
+      window.removeEventListener("demo:event", onDemoCreate);
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -130,9 +191,10 @@ export default function Layout() {
               <Wifi className="w-3.5 h-3.5" />
               <span className="hidden sm:block">Live</span>
             </div>
+            <LiveControlButton />
             <div className="w-px h-4 bg-border" />
             <div className="text-xs text-muted-foreground font-mono">
-              {new Date().toLocaleTimeString("vi-VN")}
+              {currentTime.toLocaleTimeString("vi-VN")}
             </div>
           </div>
         </header>

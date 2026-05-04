@@ -17,10 +17,13 @@ export default function Alerts() {
       setLoading(false);
     });
     const unsub = base44.entities.Alert.subscribe((event) => {
-      if (event.type === "create") setAlerts((prev) => [event.data, ...prev]);
+      if (event.type === "create") setAlerts((prev) => {
+        const exists = prev.some((a) => a.id === event.data?.id);
+        return exists ? prev : [event.data, ...prev];
+      });
       if (event.type === "update")
         setAlerts((prev) =>
-          prev.map((a) => (a.id === event.id ? event.data : a)),
+          prev.map((a) => (a.id === event.data?.id ? event.data : a)),
         );
     });
     return () => unsub();

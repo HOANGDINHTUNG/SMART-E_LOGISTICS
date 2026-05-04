@@ -81,13 +81,13 @@ export default function Contact() {
             {
               icon: Mail,
               label: "Email hỗ trợ",
-              value: "support@smartbox-elogistics.vn",
+              value: "smartboxelogistics.vn",
               sub: "Phản hồi trong 24h",
             },
             {
               icon: Phone,
               label: "Hotline khẩn cấp",
-              value: "1800 SMART BOX",
+              value: "1900 040506",
               sub: "24/7 · Miễn phí",
             },
             {
@@ -99,7 +99,7 @@ export default function Contact() {
             {
               icon: MapPin,
               label: "Địa chỉ",
-              value: "TP. Hồ Chí Minh, Việt Nam",
+              value: "Số 2 Võ Oanh, Phường Thạnh Mỹ Tây, TP.HCM",
               sub: "Văn phòng chính",
             },
             {

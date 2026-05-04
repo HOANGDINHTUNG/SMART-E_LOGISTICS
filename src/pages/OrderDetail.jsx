@@ -31,20 +31,44 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.Order.get(orderId).then(async (o) => {
+    let cancelled = false;
+
+    async function loadDetail() {
+      setLoading(true);
+      let o = await base44.entities.Order.get(orderId);
+      if (!o) {
+        const byCode = await base44.entities.Order.filter(
+          { order_code: orderId },
+          "-created_date",
+          1,
+        );
+        o = byCode[0] || null;
+      }
+
+      if (cancelled) return;
+      if (!o) {
+        setOrder(null);
+        setSmartbox(null);
+        setSensorData([]);
+        setAlerts([]);
+        setLoading(false);
+        return;
+      }
+
       setOrder(o);
       const [sensors, orderAlerts] = await Promise.all([
         base44.entities.SensorData.filter(
-          { order_id: orderId },
+          { order_id: o.id },
           "-timestamp",
           50,
         ),
         base44.entities.Alert.filter(
-          { order_id: orderId },
+          { order_id: o.id },
           "-created_date",
           20,
         ),
       ]);
+      if (cancelled) return;
       setSensorData(sensors.reverse());
       setAlerts(orderAlerts);
       if (o.smartbox_id) {
@@ -53,24 +77,51 @@ export default function OrderDetail() {
           "-updated_date",
           1,
         );
-        if (boxes.length > 0) setSmartbox(boxes[0]);
+        if (!cancelled && boxes.length > 0) setSmartbox(boxes[0]);
       }
       setLoading(false);
-    });
+    }
+
+    loadDetail();
+    return () => {
+      cancelled = true;
+    };
   }, [orderId]);
 
   useEffect(() => {
+    const unsubOrder = base44.entities.Order.subscribe((event) => {
+      if (event.data?.id === orderId || event.data?.order_code === orderId) {
+        setOrder(event.data);
+      }
+    });
+    const unsubSmartBox = base44.entities.SmartBox.subscribe((event) => {
+      setSmartbox((prev) => {
+        if (!prev) return prev;
+        return prev.id === event.data?.id || prev.box_id === event.data?.box_id
+          ? event.data
+          : prev;
+      });
+    });
     const unsub = base44.entities.SensorData.subscribe((event) => {
       if (event.data?.order_id === orderId && event.type === "create") {
-        setSensorData((prev) => [...prev, event.data].slice(-50));
+        setSensorData((prev) => {
+          const exists = prev.some((item) => item.id === event.data.id);
+          return exists ? prev : [...prev, event.data].slice(-50);
+        });
       }
     });
     const unsubAlert = base44.entities.Alert.subscribe((event) => {
-      if (event.data?.order_id === orderId && event.type === "create") {
-        setAlerts((prev) => [event.data, ...prev]);
+      if (event.data?.order_id === orderId) {
+        setAlerts((prev) => {
+          const exists = prev.find((a) => a.id === event.data.id);
+          if (exists) return prev.map((a) => (a.id === event.data.id ? event.data : a));
+          return [event.data, ...prev];
+        });
       }
     });
     return () => {
+      unsubOrder();
+      unsubSmartBox();
       unsub();
       unsubAlert();
     };

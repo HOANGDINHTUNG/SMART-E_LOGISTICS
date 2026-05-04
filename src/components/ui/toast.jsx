@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const ToastProvider = React.forwardRef(({ ...props }, ref) => (
   <div
     ref={ref}
-    className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
+    className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse gap-[10px] p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
     {...props}
   />
 ));
@@ -16,7 +16,7 @@ ToastProvider.displayName = "ToastProvider";
 const ToastViewport = React.forwardRef(({ ...props }, ref) => (
   <div
     ref={ref}
-    className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
+    className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse gap-[10px] p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
     {...props}
   />
 ));
@@ -30,6 +30,9 @@ const toastVariants = cva(
         default: "border bg-background text-foreground",
         destructive:
           "destructive group border-destructive bg-destructive text-destructive-foreground",
+        alert: "group border-red-500/30 bg-red-500/10 text-red-600 shadow-red-500/20 shadow-md ring-1 ring-red-500/20",
+        warning: "group border-amber-500/30 bg-amber-500/10 text-amber-600 shadow-amber-500/20 shadow-md ring-1 ring-amber-500/20",
+        success: "group border-green-500/30 bg-green-500/10 text-green-600 shadow-green-500/20 shadow-md ring-1 ring-green-500/20",
       },
     },
     defaultVariants: {
