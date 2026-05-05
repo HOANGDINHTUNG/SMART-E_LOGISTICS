@@ -5,6 +5,7 @@ import { Plus, Search, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import OrderFormDialog from "../components/OrderFormDialog";
+import { getOrderDisplayAddress, getOrderMapHref } from "@/utils/locationResolver";
 
 const statusColors = {
   "Đang vận chuyển": "text-primary bg-primary/10 border-primary/20",
@@ -36,9 +37,9 @@ export default function Orders() {
       if (!evt || evt.type !== "order") return;
       setOrders((prev) => {
         const id = evt.orderId || evt.order_id || (evt.data && evt.data.id) || evt.id;
-        const exists = prev.find((o) => o.id === id || o.order_code === base.order_code || o.order_code === `DM-${id}`);
         // prefer full data payload when available
         const base = evt.data || {};
+        const exists = prev.find((o) => o.id === id || o.order_code === base.order_code || o.order_code === `DM-${id}`);
         const mappedStatus =
           base.status ||
           (evt.status === "created"
@@ -51,6 +52,7 @@ export default function Orders() {
             ? "Đã giao"
             : evt.status || "Chờ xử lý");
         const newOrder = {
+          ...base,
           id,
           order_code: base.order_code || `DM-${id}`,
           sender_name: base.sender_name || "Demo Sender",
@@ -239,6 +241,10 @@ export default function Orders() {
               ) : (
                 filtered.map((order) => {
                   const rows = [];
+                  const originDisplay = getOrderDisplayAddress(order, "origin");
+                  const destinationDisplay = getOrderDisplayAddress(order, "destination");
+                  const originHref = getOrderMapHref(order, "origin");
+                  const destinationHref = getOrderMapHref(order, "destination");
                   // parent row
                   rows.push(
                     <tr
@@ -263,21 +269,21 @@ export default function Orders() {
                       </td>
                       <td className="py-3 px-4 text-xs text-muted-foreground hidden md:table-cell">
                         <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                          href={originHref}
                           target="_blank"
                           rel="noreferrer"
                           className="hover:underline"
                         >
-                          {order.origin}
+                          {originDisplay}
                         </a>{" "}
                         →{" "}
                         <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                          href={destinationHref}
                           target="_blank"
                           rel="noreferrer"
                           className="hover:underline"
                         >
-                          {order.destination}
+                          {destinationDisplay}
                         </a>
                       </td>
                       <td className="py-3 px-4 hidden lg:table-cell">

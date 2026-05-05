@@ -21,6 +21,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { format } from "date-fns";
+import {
+  buildGoogleMapsCoordinateUrl,
+  getOrderDisplayAddress,
+  getOrderGpsPoint,
+  getOrderMapHref,
+} from "@/utils/locationResolver";
 
 export default function OrderDetail() {
   const { orderId } = useParams();
@@ -174,8 +180,14 @@ export default function OrderDetail() {
         }
       : null;
 
-  const mapLat = latestSensor?.latitude ?? smartbox?.last_latitude;
-  const mapLng = latestSensor?.longitude ?? smartbox?.last_longitude;
+  const orderGpsPoint = getOrderGpsPoint(order);
+  const mapLat = latestSensor?.latitude ?? smartbox?.last_latitude ?? orderGpsPoint?.lat;
+  const mapLng = latestSensor?.longitude ?? smartbox?.last_longitude ?? orderGpsPoint?.lng;
+  const mapLabel = latestSensor?.place || orderGpsPoint?.label || order.current_location_address || "Vị trí GPS đơn hàng";
+  const originDisplay = getOrderDisplayAddress(order, "origin");
+  const destinationDisplay = getOrderDisplayAddress(order, "destination");
+  const originHref = getOrderMapHref(order, "origin");
+  const destinationHref = getOrderMapHref(order, "destination");
 
   const statusMap = {
     "Đang vận chuyển": "text-primary bg-primary/10 border-primary/20",
@@ -208,21 +220,21 @@ export default function OrderDetail() {
           <p className="text-sm text-muted-foreground mt-1">
             {order.cargo_type} ·{" "}
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+              href={originHref}
               target="_blank"
               rel="noreferrer"
               className="hover:underline text-primary"
             >
-              {order.origin}
+              {originDisplay}
             </a>{" "}
             {"->"}{" "}
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+              href={destinationHref}
               target="_blank"
               rel="noreferrer"
               className="hover:underline text-primary"
             >
-              {order.destination}
+              {destinationDisplay}
             </a>
           </p>
         </div>
@@ -242,21 +254,21 @@ export default function OrderDetail() {
               value={
                 <>
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                    href={originHref}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:underline text-primary"
                   >
-                    {order.origin}
+                    {originDisplay}
                   </a>{" "}
                   {"->"}{" "}
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                    href={destinationHref}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:underline text-primary"
                   >
-                    {order.destination}
+                    {destinationDisplay}
                   </a>
                 </>
               }
@@ -266,6 +278,12 @@ export default function OrderDetail() {
               <InfoRow label="Dự kiến giao" value={order.estimated_delivery} />
             )}
             {order.notes && <InfoRow label="Ghi chú" value={order.notes} />}
+            {order.current_location_type && (
+              <InfoRow label="Logic GPS" value={order.current_location_type} />
+            )}
+            {order.current_location_address && (
+              <InfoRow label="GPS hiện tại" value={order.current_location_address} />
+            )}
           </div>
 
           {smartbox && (
@@ -303,7 +321,7 @@ export default function OrderDetail() {
                   <MapPin className="w-4 h-4 text-red-400" /> Vị trí GPS
                 </h2>
                 <a
-                  href={`https://www.google.com/maps?q=${mapLat},${mapLng}`}
+                  href={orderGpsPoint?.mapsUrl || buildGoogleMapsCoordinateUrl(mapLat, mapLng)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline flex items-center gap-1"
@@ -318,12 +336,15 @@ export default function OrderDetail() {
                   height="100%"
                   style={{ border: 0 }}
                   loading="lazy"
-                  src={`https://maps.google.com/maps?q=${mapLat},${mapLng}&z=13&output=embed`}
+                  src={`https://maps.google.com/maps?q=${mapLat},${mapLng}&z=14&output=embed`}
                 />
               </div>
-              <div className="px-4 py-2 text-xs font-mono text-muted-foreground flex gap-4 bg-secondary/30">
-                <span>Lat: {mapLat.toFixed(5)}</span>
-                <span>Lng: {mapLng.toFixed(5)}</span>
+              <div className="px-4 py-2 text-xs text-muted-foreground bg-secondary/30 space-y-1">
+                <div className="font-mono flex gap-4">
+                  <span>Lat: {Number(mapLat).toFixed(5)}</span>
+                  <span>Lng: {Number(mapLng).toFixed(5)}</span>
+                </div>
+                <div>{mapLabel}</div>
               </div>
             </div>
           )}

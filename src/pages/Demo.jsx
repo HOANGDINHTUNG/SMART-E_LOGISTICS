@@ -28,6 +28,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import QRScanner from "../components/QRScanner";
+import {
+  buildOrderRouteCoords,
+  getOrderDisplayAddress,
+  getOrderGpsPoint,
+  getOrderMapHref,
+} from "@/utils/locationResolver";
 
 // Fix leaflet icon
 // @ts-ignore
@@ -106,9 +112,20 @@ export default function Demo() {
   }, [order]);
 
   const latestSensor = sensorData[sensorData.length - 1];
-  const routeCoords = sensorData
+  const orderGpsPoint = order ? getOrderGpsPoint(order) : null;
+  const currentMapPoint = latestSensor?.latitude
+    ? {
+        lat: latestSensor.latitude,
+        lng: latestSensor.longitude,
+        label: latestSensor.place,
+      }
+    : orderGpsPoint;
+  const sensorRouteCoords = sensorData
     .filter((d) => d.latitude && d.longitude)
     .map((d) => [d.latitude, d.longitude]);
+  const routeCoords = sensorRouteCoords.length > 1
+    ? sensorRouteCoords
+    : buildOrderRouteCoords(order || {}, currentMapPoint);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 space-y-12">
@@ -255,21 +272,21 @@ export default function Demo() {
                 <p className="text-sm text-muted-foreground pt-1">
                   {order.cargo_type} ·{" "}
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.origin)}`}
+                    href={getOrderMapHref(order, "origin")}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:underline text-primary"
                   >
-                    {order.origin}
+                    {getOrderDisplayAddress(order, "origin")}
                   </a>{" "}
                   →{" "}
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.destination)}`}
+                    href={getOrderMapHref(order, "destination")}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:underline text-primary"
                   >
-                    {order.destination}
+                    {getOrderDisplayAddress(order, "destination")}
                   </a>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -296,18 +313,19 @@ export default function Demo() {
                 <span className="text-sm font-semibold text-foreground">
                   Vị trí GPS
                 </span>
-                {latestSensor?.latitude && (
+                {currentMapPoint?.lat && (
                   <span className="ml-auto text-xs font-mono text-muted-foreground">
-                    {latestSensor.latitude.toFixed(4)},{" "}
-                    {latestSensor.longitude?.toFixed(4)}
+                    {Number(currentMapPoint.lat).toFixed(4)},{" "}
+                    {Number(currentMapPoint.lng).toFixed(4)}
                   </span>
                 )}
               </div>
-              {latestSensor?.latitude ? (
+              {currentMapPoint?.lat ? (
                 <div style={{ height: 300 }}>
                   {/* @ts-ignore */}
                   <MapContainer
-                    center={[latestSensor.latitude, latestSensor.longitude]}
+                    key={`${currentMapPoint.lat}-${currentMapPoint.lng}`}
+                    center={[currentMapPoint.lat, currentMapPoint.lng]}
                     zoom={13}
                     style={{ height: "100%", width: "100%" }}
                   >
@@ -325,13 +343,19 @@ export default function Demo() {
                       />
                     )}
                     <Marker
-                      position={[latestSensor.latitude, latestSensor.longitude]}
+                      position={[currentMapPoint.lat, currentMapPoint.lng]}
                     >
                       <Popup>
                         <div className="text-xs">
                           <strong>{order.order_code}</strong>
                           <br />
                           {order.status}
+                          {currentMapPoint.label && (
+                            <>
+                              <br />
+                              {currentMapPoint.label}
+                            </>
+                          )}
                         </div>
                       </Popup>
                     </Marker>

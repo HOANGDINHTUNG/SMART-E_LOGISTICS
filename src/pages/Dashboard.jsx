@@ -18,6 +18,8 @@ import {
   Smartphone,
   TrendingUp,
 } from "lucide-react";
+import { getOrderDisplayAddress } from "@/utils/locationResolver";
+
 import {
   AreaChart,
   Area,
@@ -582,15 +584,15 @@ export default function Dashboard() {
                     </td>
                     <td className="py-3 px-4 text-xs text-muted-foreground hidden md:table-cell">
                       <div className="flex items-center gap-1 max-w-[200px] truncate">
-                        <span className="truncate flex-1" title={order.origin}>
-                          {order.origin}
+                        <span className="truncate flex-1" title={getOrderDisplayAddress(order, "origin")}>
+                          {getOrderDisplayAddress(order, "origin")}
                         </span>
                         <ArrowRight className="w-3 h-3 text-border flex-shrink-0" />
                         <span
                           className="truncate flex-1"
-                          title={order.destination}
+                          title={getOrderDisplayAddress(order, "destination")}
                         >
-                          {order.destination}
+                          {getOrderDisplayAddress(order, "destination")}
                         </span>
                       </div>
                     </td>
